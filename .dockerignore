@@ -1,0 +1,21 @@
+# Deny by default: only the runtime manifest and application source enter the context.
+**
+!package.json
+!package-lock.json
+!src/
+!src/**
+!public/
+!public/**
+!Dockerfile
+!.dockerignore
+
+# Explicitly exclude secrets and development artifacts even inside allowed directories.
+**/node_modules
+**/.env
+**/.env.*
+**/.git
+**/.gitignore
+**/README*
+**/*.log
+**/*.pem
+**/*.key

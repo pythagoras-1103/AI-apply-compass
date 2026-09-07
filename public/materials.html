@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>申请材料清单生成器</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/materials.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+    <header class="site-header" id="siteHeader"></header>
+    <main class="app container page-main" id="main">
+      <header class="top">
+        <p class="eyebrow">YOUR APPLICATION CHECKLIST</p>
+        <h1>申请材料清单生成器</h1>
+        <p class="subtitle">选一所学校，自动生成本科申请材料待办清单。</p>
+
+        <nav class="school-tabs" id="schoolTabs" aria-label="选择学校">
+          <button class="school-tab active" type="button" data-school="NYU">NYU</button>
+          <button class="school-tab" type="button" data-school="UCL">UCL</button>
+          <button class="school-tab" type="button" data-school="港大">港大</button>
+        </nav>
+        <form class="school-search" id="schoolSearch">
+          <label for="schoolInput">查询其他大学</label>
+          <div class="search-controls">
+            <input id="schoolInput" name="school" maxlength="120" autocomplete="off" placeholder="学校名称，如 University of Sydney、Oxford、MIT" required />
+            <button class="school-tab active" id="searchButton" type="submit">AI 查询</button>
+          </div>
+        </form>
+        <div class="actions material-actions">
+          <button type="button" class="button secondary" id="saveApplication">加入我的申请</button>
+          <a class="text-button" id="materialsTimeline" href="/timeline.html">查看时间线 →</a>
+          <a class="text-button" id="materialsEssay" href="/essay.html">AI 文书 →</a>
+          <button type="button" class="text-button" id="refreshMaterials">重新联网查询</button>
+        </div>
+      </header>
+
+      <section class="result-card" aria-live="polite">
+        <div class="result-head">
+          <div>
+            <p class="eyebrow">当前清单</p>
+            <h2 id="schoolTitle">NYU 本科申请材料</h2>
+          </div>
+          <span class="source-badge" id="sourceBadge">准备查询</span>
+        </div>
+
+        <div class="progress-block" id="progressBlock" hidden>
+          <div class="progress-ring" id="progressRing" style="--progress: 0deg">
+            <span id="progressPercent">0%</span>
+          </div>
+          <div>
+            <strong id="progressText">已完成 0/0 项</strong>
+            <p>点击材料行就能打勾，进度会自动更新。</p>
+          </div>
+        </div>
+
+        <div class="loading" id="loadingBox" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <p id="typingText"></p>
+        </div>
+
+        <div class="celebration" id="celebration" hidden>
+          <div class="confetti" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          ✅ 材料准备就绪！
+        </div>
+
+        <p class="query-notice" id="queryNotice" role="status" hidden></p>
+        <div class="materials" id="materialsList"></div>
+      </section>
+    </main>
+    <footer class="site-footer" id="siteFooter"></footer>
+    <div class="toast" id="toast" role="status" hidden></div>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,205 @@
+[
+  {
+    "id": "mit",
+    "slug": "mit",
+    "rank": "1",
+    "name": "Massachusetts Institute of Technology (MIT)",
+    "shortName": "MIT",
+    "country": "United States",
+    "city": "Cambridge",
+    "region": "us",
+    "aliases": [
+      "Massachusetts Institute of Technology",
+      "麻省理工"
+    ]
+  },
+  {
+    "id": "imperial",
+    "slug": "imperial",
+    "rank": "=2",
+    "name": "Imperial College London",
+    "shortName": "Imperial",
+    "country": "United Kingdom",
+    "city": "London",
+    "region": "uk",
+    "aliases": [
+      "帝国理工"
+    ]
+  },
+  {
+    "id": "stanford",
+    "slug": "stanford",
+    "rank": "=2",
+    "name": "Stanford University",
+    "shortName": "Stanford",
+    "country": "United States",
+    "city": "Stanford",
+    "region": "us",
+    "aliases": [
+      "斯坦福"
+    ]
+  },
+  {
+    "id": "oxford",
+    "slug": "oxford",
+    "rank": "4",
+    "name": "University of Oxford",
+    "shortName": "Oxford",
+    "country": "United Kingdom",
+    "city": "Oxford",
+    "region": "uk",
+    "aliases": [
+      "牛津"
+    ]
+  },
+  {
+    "id": "harvard",
+    "slug": "harvard",
+    "rank": "5",
+    "name": "Harvard University",
+    "shortName": "Harvard",
+    "country": "United States",
+    "city": "Cambridge",
+    "region": "us",
+    "aliases": [
+      "哈佛"
+    ]
+  },
+  {
+    "id": "cambridge",
+    "slug": "cambridge",
+    "rank": "6",
+    "name": "University of Cambridge",
+    "shortName": "Cambridge",
+    "country": "United Kingdom",
+    "city": "Cambridge",
+    "region": "uk",
+    "aliases": [
+      "剑桥"
+    ]
+  },
+  {
+    "id": "caltech",
+    "slug": "caltech",
+    "rank": "7",
+    "name": "California Institute of Technology (Caltech)",
+    "shortName": "Caltech",
+    "country": "United States",
+    "city": "Pasadena",
+    "region": "us",
+    "aliases": [
+      "California Institute of Technology",
+      "加州理工"
+    ]
+  },
+  {
+    "id": "eth-zurich",
+    "slug": "eth-zurich",
+    "rank": "=8",
+    "name": "ETH Zurich",
+    "shortName": "ETH Zurich",
+    "country": "Switzerland",
+    "city": "Zurich",
+    "region": "europe",
+    "aliases": [
+      "苏黎世联邦理工"
+    ]
+  },
+  {
+    "id": "ucl",
+    "slug": "ucl",
+    "rank": "=8",
+    "name": "UCL",
+    "shortName": "UCL",
+    "country": "United Kingdom",
+    "city": "London",
+    "region": "uk",
+    "aliases": [
+      "University College London",
+      "伦敦大学学院"
+    ]
+  },
+  {
+    "id": "nus",
+    "slug": "nus",
+    "rank": "10",
+    "name": "National University of Singapore (NUS)",
+    "shortName": "NUS",
+    "country": "Singapore",
+    "city": "Singapore",
+    "region": "asia",
+    "aliases": [
+      "National University of Singapore",
+      "新加坡国立大学"
+    ]
+  },
+  {
+    "id": "hku",
+    "slug": "hku",
+    "rank": "11",
+    "name": "The University of Hong Kong",
+    "shortName": "HKU",
+    "country": "Hong Kong SAR",
+    "city": "Hong Kong",
+    "region": "asia",
+    "aliases": [
+      "港大",
+      "香港大学",
+      "University of Hong Kong"
+    ]
+  },
+  {
+    "id": "ntu-singapore",
+    "slug": "ntu-singapore",
+    "rank": "12",
+    "name": "Nanyang Technological University, Singapore",
+    "shortName": "NTU Singapore",
+    "country": "Singapore",
+    "city": "Singapore",
+    "region": "asia",
+    "aliases": [
+      "Nanyang Technological University",
+      "南洋理工"
+    ]
+  },
+  {
+    "id": "peking",
+    "slug": "peking",
+    "rank": "13",
+    "name": "Peking University",
+    "shortName": "Peking University",
+    "country": "China",
+    "city": "Beijing",
+    "region": "asia",
+    "aliases": [
+      "北京大学"
+    ]
+  },
+  {
+    "id": "tsinghua",
+    "slug": "tsinghua",
+    "rank": "14",
+    "name": "Tsinghua University",
+    "shortName": "Tsinghua",
+    "country": "China",
+    "city": "Beijing",
+    "region": "asia",
+    "aliases": [
+      "清华大学"
+    ]
+  },
+  {
+    "id": "upenn",
+    "slug": "upenn",
+    "rank": "15",
+    "name": "University of Pennsylvania",
+    "shortName": "UPenn",
+    "country": "United States",
+    "city": "Philadelphia",
+    "region": "us",
+    "aliases": [
+      "宾夕法尼亚大学"
+    ]
+  }
+]
+

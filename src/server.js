@@ -50,9 +50,11 @@ export function createApp({ queryKimi = fetchKimiChecklist, cache = new Checklis
       // Never expose upstream bodies, prompts, credentials, or raw error messages.
       console.error(`Kimi 查询失败 [${kimiFailureReason(error)}]，使用该校备用数据或返回不可用状态。`);
       const items = getFallbackChecklist(school);
+      const reason = kimiFailureReason(error);
+      const hints = {"Kimi search HTTP 502":"Kimi 搜索服务暂时异常，请稍后再试或核对学校官网。","Kimi search HTTP 503":"Kimi 搜索服务繁忙，请稍后再试。","Kimi search HTTP 504":"Kimi 搜索服务超时，请稍后再试。",timeout:"Kimi 响应超时，请稍后重试；不要连续提交。",key_not_configured:"未配置 Kimi Key，请检查项目根目录 .env 并重启服务。",no_search_evidence:"本次搜索没有可用官网正文，请尝试学校英文全称或核对官网。",empty_checklist:"搜索已返回，但没有整理出带来源的可靠材料，请核对学校官网。",invalid_json:"模型返回格式异常，请重试一次。", "Kimi HTTP 401":"Kimi Key 认证失败，请检查 Key 并重启服务。", "Kimi search HTTP 401":"Kimi Key 认证失败，请检查 Key 并重启服务。", "Kimi HTTP 429":"Kimi 账户额度或速率受限，请查看开放平台。", "Kimi search HTTP 429":"Kimi 搜索额度或速率受限，请查看开放平台。"};
       res.json({ school, source: items ? "fallback" : "unavailable", items: items || [],
         warning: items ? "本地备用清单 · 请以学校官网最新要求为准" :
-          "AI 查询暂时失败，且当前没有该学校的备用清单，请稍后重试。" });
+          (hints[reason] || "AI 查询暂时失败，且当前没有该学校的备用清单，请稍后重试。") });
     }
   });
   app.post("/api/essay/analyze", rateLimit({ windowMs: 600000, limit: essayRateLimitMax,

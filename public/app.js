@@ -219,7 +219,7 @@ async function loadMaterials(school, custom = false, force = false) {
   const id = ++requestId;
   const controller = new AbortController();
   activeController = controller;
-  const timer = setTimeout(() => controller.abort(), 125000);
+  const timer = setTimeout(() => controller.abort(), 190000);
   currentSchool = school;
   updateWorkspaceLinks();
   currentItems = [];
@@ -262,8 +262,8 @@ async function loadMaterials(school, custom = false, force = false) {
     applicationStore?.saveMaterials(school, data);
     sourceBadge.textContent = badges[data.source];
     showNotice(data.source === "fallback" ? "本地备用清单 · 请以学校官网最新要求为准" :
-      data.source === "unavailable" ? "AI 查询暂时失败，且当前没有该学校的备用清单，请稍后重试。" :
-        "AI 整理结果，请核对来源原文及适用申请年份、轮次和专业；链接未经人工核实。");
+      data.source === "unavailable" ? (data.warning || "AI 查询暂时失败，且当前没有该学校的备用清单，请稍后重试。") :
+        "AI 整理结果，默认参考下一适用入学年度；未确认当前周期的日期留空。请核对来源原文、轮次和专业。");
     renderMaterials(Array.isArray(data.items) ? data.items : [], applicationStore?.getMaterials(school)?.checked || []);
   } catch (error) {
     if (id !== requestId) return;

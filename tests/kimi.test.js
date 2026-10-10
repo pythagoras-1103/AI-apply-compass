@@ -1,70 +1,66 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { fetchKimiChecklist, KIMI_TOOLS, kimiFailureReason } from "../src/kimiClient.js";
-
-const final = { finish_reason: "stop", message: { role: "assistant", content: '{"items":[{"name":"Essay","sourceUrl":"https://example.org","verifiedAt":"2000-01-01"}]}' } };
-const tool = (id) => ({ id, type: "function", function: { name: "$web_search", arguments: '{ "query": "admissions" }' } });
-const reply = (choice) => ({ ok: true, json: async () => ({ choices: [choice] }) });
-const options = { apiKey: "test-only-placeholder", now: () => new Date("2026-09-07T12:00:00Z") };
-
-test("failure diagnostics categorize errors without exposing upstream secrets", () => {
-  assert.equal(kimiFailureReason(new Error("Kimi key not configured")), "key_not_configured");
-  assert.equal(kimiFailureReason(new Error("Kimi HTTP 401")), "Kimi HTTP 401");
-  assert.equal(kimiFailureReason(new Error("Kimi HTTP 401 private credential")), "upstream_or_network_error");
-  assert.equal(kimiFailureReason(new SyntaxError("private response body")), "invalid_json");
-  assert.equal(kimiFailureReason({ name: "AbortError", message: "private" }), "timeout");
-  assert.equal(kimiFailureReason(new Error("Kimi round limit exceeded")), "round_limit");
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {fetchKimiChecklist, searchTarget, kimiFailureReason, evidenceHasDate} from '../src/kimiClient.js';
+const source='https://college.harvard.edu/admissions/apply';
+const evidence={search_results:[{title:'Apply',url:source,chunks:[{text:'First-year applicants submit an application and school report.'}]}]};
+const final=content=>({choices:[{finish_reason:'stop',message:{role:'assistant',content}}]});
+const json=body=>({ok:true,json:async()=>body});
+const opts={apiKey:'test-only',now:()=>new Date('2026-10-10T00:00:00Z')};
+const good=JSON.stringify({items:[{name:'Application',sourceUrl:source}]});
+test('Chinese university alias resolves to official search domain',()=>{
+ assert.deepEqual(searchTarget('哈佛大学'),{name:'Harvard University',domain:'college.harvard.edu'});
+ assert.equal(searchTarget('NYU').domain,'nyu.edu');
+ assert.deepEqual(searchTarget('Unknown University'),{name:'Unknown University'});
+});
+test('search executes before JSON generation and only supplied sources survive',async()=>{
+ const calls=[];
+ const items=await fetchKimiChecklist('哈佛大学',{...opts,fetchImpl:async(url,r)=>{
+  const body=JSON.parse(r.body);calls.push({url,body});
+  return json(calls.length===1?evidence:final(JSON.stringify({items:[{name:'Application',sourceUrl:source},{name:'invented',sourceUrl:'https://evil.example'}]})));
+ }});
+ assert.equal(items.length,1);assert.equal(items[0].verifiedAt,'2026-10-10');
+ assert.match(calls[0].url,/tools\/search_pro$/);assert.deepEqual(calls[0].body.sites,['college.harvard.edu']);
+ assert.deepEqual(calls[1].body.response_format,{type:'json_object'});assert.equal(calls[1].body.tools,undefined);
+});
+test('no official body never invokes model',async()=>{
+ let calls=0;await assert.rejects(fetchKimiChecklist('哈佛大学',{...opts,fetchImpl:async()=>{calls++;return json({search_results:[{url:'https://harvard.edu.evil.example',chunks:[{text:'fake'}]}]});}}),/No search evidence/);assert.equal(calls,1);
+});
+test('format recovery is bounded to one extra generation',async()=>{
+ let calls=0;const items=await fetchKimiChecklist('Harvard',{...opts,fetchImpl:async()=>json(++calls===1?evidence:final(calls===2?'not json':good))});assert.equal(calls,3);assert.equal(items.length,1);
+ let badCalls=0;await assert.rejects(fetchKimiChecklist('Harvard',{...opts,fetchImpl:async()=>json(++badCalls===1?evidence:final('not json'))}),/Cannot parse/);assert.equal(badCalls,3);
+});
+test('empty results are not replaced by guessed requirements',async()=>{
+ let calls=0;await assert.rejects(fetchKimiChecklist('Harvard',{...opts,fetchImpl:async()=>json(++calls===1?evidence:final('{"items":[]}'))}),/No usable/);assert.equal(calls,2);
+});
+test('authentication failure has no paid retry and is sanitized',async()=>{
+ let calls=0;await assert.rejects(fetchKimiChecklist('Harvard',{...opts,fetchImpl:async()=>{calls++;return {ok:false,status:401};}}),/Kimi search HTTP 401/);assert.equal(calls,1);
+ assert.equal(kimiFailureReason(new Error('Kimi search HTTP 401')),'Kimi search HTTP 401');
+ assert.equal(kimiFailureReason(new Error('private token')),'upstream_or_network_error');
+});
+test('timeout covers response body read',async()=>{
+ await assert.rejects(fetchKimiChecklist('Harvard',{...opts,timeoutMs:10,fetchImpl:async(_u,{signal})=>({ok:true,json:()=>new Promise((_res,rej)=>signal.addEventListener('abort',()=>rej(signal.reason),{once:true}))})}),/timed out/);
+});
+test('truncated generation is rejected',async()=>{
+ let calls=0;await assert.rejects(fetchKimiChecklist('Harvard',{...opts,fetchImpl:async()=>json(++calls===1?evidence:{choices:[{finish_reason:'length',message:{content:good}}]})}),/Incomplete/);
 });
 
-test("multiple tool calls round-trip with complete assistant messages and exact arguments", async () => {
-  const calls = [];
-  const assistant = { role: "assistant", content: null, tool_calls: [tool("one"), tool("two")], reasoning_content: "retained" };
-  const fetchImpl = async (url, request) => {
-    assert.equal(url, "https://api.moonshot.cn/v1/chat/completions");
-    calls.push(JSON.parse(request.body));
-    return reply(calls.length === 1 ? { finish_reason: "tool_calls", message: assistant } : final);
-  };
-  const items = await fetchKimiChecklist("NYU", { ...options, fetchImpl });
-  assert.equal(calls.length, 2);
-  for (const call of calls) {
-    assert.equal(call.model, "kimi-k2.6");
-    assert.deepEqual(call.thinking, { type: "disabled" });
-    assert.deepEqual(call.tools, KIMI_TOOLS);
-  }
-  assert.deepEqual(calls[1].messages[2], assistant);
-  for (let index = 0; index < 2; index++) {
-    assert.deepEqual(calls[1].messages[index + 3], { role: "tool", tool_call_id: assistant.tool_calls[index].id,
-      name: "$web_search", content: assistant.tool_calls[index].function.arguments });
-  }
-  assert.equal(items[0].verifiedAt, "2026-09-07");
+test('transient search gateway failure retries once but never indefinitely',async()=>{
+ let calls=0;const items=await fetchKimiChecklist('Harvard',{...opts,fetchImpl:async()=>{calls++;return calls===1?{ok:false,status:502}:json(calls===2?evidence:final(good));}});assert.equal(calls,3);assert.equal(items.length,1);
+ let failed=0;await assert.rejects(fetchKimiChecklist('Harvard',{...opts,fetchImpl:async()=>{failed++;return {ok:false,status:502};}}),/502/);assert.equal(failed,2);
 });
 
-test("tool loop stops after four requests", async () => {
-  let count = 0;
-  await assert.rejects(fetchKimiChecklist("NYU", { ...options, fetchImpl: async () => {
-    count++;
-    return reply({ finish_reason: "tool_calls", message: { role: "assistant", tool_calls: [tool(String(count))] } });
-  } }), /round limit/);
-  assert.equal(count, 4);
+test('deadline needs explicit complete year/month/day in source, not inferred recurring dates',()=>{
+ assert.equal(evidenceHasDate('2026-11-01','November 1 is our annual deadline'),false);
+ assert.equal(evidenceHasDate('2026-11-01','November 1, 2026'),true);
+ assert.equal(evidenceHasDate('2027-01-01','2027-01-01'),true);
+ assert.equal(evidenceHasDate('2027-01-01','January 1, 2026'),false);
 });
-
-test("bad status, malformed JSON, empty and truncated responses fail safely", async () => {
-  await assert.rejects(fetchKimiChecklist("NYU", { ...options, fetchImpl: async () => ({ ok: false, status: 401 }) }), /HTTP 401/);
-  for (const content of ["not json", "[]", '{"items":[null]}']) {
-    await assert.rejects(fetchKimiChecklist("NYU", { ...options, fetchImpl: async () => reply({ ...final, message: { role: "assistant", content } }) }));
-  }
-  await assert.rejects(fetchKimiChecklist("NYU", { ...options, fetchImpl: async () => reply({ ...final, finish_reason: "length" }) }), /Incomplete/);
-  await assert.rejects(fetchKimiChecklist("NYU", { ...options, apiKey: "" }), /not configured/);
+test('MIT retrieves its known official undergraduate admissions page, never department/MBA pages',async()=>{
+ const calls=[];const url='https://catalog.mit.edu/mit/undergraduate-education/admissions/';
+ const items=await fetchKimiChecklist('MIT',{...opts,fetchImpl:async(endpoint)=>{calls.push(endpoint);return json(calls.length===1?{url,title:'MIT Admissions',markdown:'First-year students submit an application.'}:final(JSON.stringify({items:[{name:'Application',sourceUrl:url}]})));}});
+ assert.match(calls[0],/tools\/fetch$/);assert.equal(items.length,1);assert.equal(items[0].sourceTitle,'MIT Admissions');
 });
-
-test("timeout remains active while reading the response body", async () => {
-  await assert.rejects(fetchKimiChecklist("NYU", { ...options, timeoutMs: 10, fetchImpl: async (_url, { signal }) => ({
-    ok: true, json: () => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("body aborted")), { once: true }))
-  }) }), /body aborted/);
-});
-
-test("unknown tools and missing IDs cannot continue", async () => {
-  for (const call of [{ ...tool("one"), id: "" }, { ...tool("one"), function: { name: "exec", arguments: "{}" } }]) {
-    await assert.rejects(fetchKimiChecklist("NYU", { ...options, fetchImpl: async () => reply({ finish_reason: "tool_calls", message: { role: "assistant", tool_calls: [call] } }) }), /Invalid/);
-  }
+test('past dates and unsupported model-inferred dates are cleared',async()=>{
+ let calls=0;const items=await fetchKimiChecklist('Harvard',{...opts,fetchImpl:async()=>json(++calls===1?{search_results:[{title:'Apply',url:source,chunks:[{text:'Deadline January 1, 2026. Annual application information.'}]}]}:final(JSON.stringify({items:[{name:'Past',deadline:'2026-01-01',sourceUrl:source},{name:'Inferred',deadline:'2027-01-01',sourceUrl:source}]})))});
+ assert.deepEqual(items.map(i=>i.deadline),['','']);
 });
